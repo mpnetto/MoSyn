@@ -8,8 +8,6 @@
 %mex -v -largeArrayDims motif_sync_mex.cpp CXXFLAGS="$CXXFLAGS -fopenmp" LDFLAGS="$LDFLAGS -fopenmp"
 
 function [project] = calcIndexes(path, files, location, indexes, initialTime, finalTime, realTime, initialFrequency, finalFrequency, hasFrequency, removeTimeColumn, acqRate, slidWindow, taoMin,taoMax, threshold, tscLim, OutTvg)
-
-    %multiWaitbar('Subjects',0, 'Color', 'g', 'CanCancel','on', 'CancelFcn', @(a,b) disp( ['Cancel ',a] ));
    
     % The number of subjects is the number of files provided
     numSubjects = length(files);
