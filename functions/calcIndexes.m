@@ -7,7 +7,7 @@
 
 %mex -v -largeArrayDims motif_sync_mex.cpp CXXFLAGS="$CXXFLAGS -fopenmp" LDFLAGS="$LDFLAGS -fopenmp"
 
-function [project] = calcIndexes(path, files, location, indexes, initialTime, finalTime, realTime, initialFrequency, finalFrequency, hasFrequency, removeTimeColumn, acqRate, slidWindow, taoMin,taoMax, threshold, tscLim, OutTvg)
+function [project] = calcIndexes(path, files, nodeLocation, indexes, initialTime, finalTime, realTime, initialFrequency, finalFrequency, hasFrequency, removeTimeColumn, acqRate, slidWindow, taoMin,taoMax, threshold, tscLim, OutTvg)
    
     % The number of subjects is the number of files provided
     numSubjects = length(files);
@@ -89,7 +89,7 @@ function [project] = calcIndexes(path, files, location, indexes, initialTime, fi
       
         % This method will get the values data from the TVG and save into the
         % subject
-        subjects(i) = TVG(name, path, TVGArray, TVGArray_D,TVGWeig_Dir, labels, indexes, initialTime, endTime, numNodes, slidWindow, taoMin, taoMax, threshold ,tscLim, OutTvg ,location);
+        subjects(i) = TVG(name, path, TVGArray, TVGArray_D,TVGWeig_Dir, labels, indexes, initialTime, endTime, numNodes, slidWindow, taoMin, taoMax, threshold ,tscLim, OutTvg ,nodeLocation);
             
         % This method will  caculate the indexes selected by the user in the UI
         if subjects(i).runTVG()
@@ -111,7 +111,7 @@ function [project] = calcIndexes(path, files, location, indexes, initialTime, fi
     disp("Total calculation time is: " + totalTimeEnd + " seconds.");
 
     % Configure and save project
-    project = Project(subjects, path, files, location, indexes);
+    project = Project(subjects, path, files, nodeLocation, indexes);
     project.runProject();
     project.write();
    

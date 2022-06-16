@@ -77,70 +77,73 @@ classdef Project < handle
     end
     
     properties (GetAccess = public, SetAccess = protected)    
-        Files       % File of Subject
-        L           % Length of Files
+        Files
+        FileLenght
+        Path
+        FileNames
+        NodeLocation
+        Indices
         
-        Path        % Path of Files
-        FileNames   % Name of Files
-        Location    % Path to file with the location of the nodes in plot
-        Indices     % Indices
-        
-        Degree      % Average degree of the subjects
-        PathLength  % Average path length of the subjects
-        ClusterCoefficient % Average cluster coefficient of the subjects
-        Radius
-        Diameter
-        Closeness
-        Betweenness
-        ERange
-        FindWalk
-        Modularity
-        RichClub
+        AvgDegree
+        AvgPathLength
+        AvgClusterCoefficient
+        AvgRadius
+        AvgDiameter
+        AvgCloseness
+        AvgBetweenness
+        AvgERange
+        AvgFindWalk
+        AvgModularity
+        AvgRichClub
 
     end
-    methods 
-        function p = Project(F, Path, FileNames, Location, Indices)
+    methods
 
-            p.Files = F;
-            p.L = length(p.Files);
-            
-            p.Path = Path;
-            p.FileNames = FileNames;
-            p.Location = Location;
-            p.Indices = Indices;
+        % Receive and save the project parameters
+        function project = Project(Files, Path, FileNames, Location, Indices)
+
+            project.Files = Files;
+            project.FileLenght = length(project.Files);
+            project.Path = Path;
+            project.FileNames = FileNames;
+            project.NodeLocation = Location;
+            project.Indices = Indices;
             
      
         end
-    end
-    methods
+
+        % Calculates and saves the average of the indices
         function runProject(p)
-            p.Degree = mean([p.Files.MeanDegree]);
-            p.PathLength = mean([p.Files.MeanPathLength]);
-            p.ClusterCoefficient = mean([p.Files.MeanClusterCoefficient]);
-            p.Radius = mean([p.Files.MeanRadius]);
-            p.Diameter = mean([p.Files.MeanDiameter]);
-            p.Closeness = mean([p.Files.MeanCloseness]);
-            p.Betweenness = mean([p.Files.MeanBetweenness]);
-            p.ERange = mean([p.Files.MeanERange]);
-            p.FindWalk =  mean([p.Files.MeanFindWalk]);
-            p.Modularity = mean([p.Files.MeanModularity]);
-            p.RichClub = mean([p.Files.MeanRichClub]);
+            p.AvgDegree = mean([p.Files.MeanDegree]);
+            p.AvgPathLength = mean([p.Files.MeanPathLength]);
+            p.AvgClusterCoefficient = mean([p.Files.MeanClusterCoefficient]);
+            p.AvgRadius = mean([p.Files.MeanRadius]);
+            p.AvgDiameter = mean([p.Files.MeanDiameter]);
+            p.AvgCloseness = mean([p.Files.MeanCloseness]);
+            p.AvgBetweenness = mean([p.Files.MeanBetweenness]);
+            p.AvgERange = mean([p.Files.MeanERange]);
+            p.AvgFindWalk =  mean([p.Files.MeanFindWalk]);
+            p.AvgModularity = mean([p.Files.MeanModularity]);
+            p.AvgRichClub = mean([p.Files.MeanRichClub]);
         end
         
-        function write(p)
+        % Save the subject calculated indices into a project file
+        function write(project)
             
-            F = p.Files;
+            files = project.Files;
+            filesLength = length(project.Files);
             
-            for i=1:length(p.Files)
-                relatory(i,:) = {F(i).File ...
-                    F(i).MeanDegree F(i).CVDegree  ...
-                    F(i).MeanPathLength  F(i).CVPathLength  ...
-                    F(i).MeanClusterCoefficient  F(i).CVClusterCoefficient  ...
-                    F(i).MeanEdges F(i).CVEdges ...
+            for i=1:filesLength
+                relatory(i,:) = {files(i).File ...
+                    files(i).MeanDegree files(i).CVDegree  ...
+                    files(i).MeanPathLength  files(i).CVPathLength  ...
+                    files(i).MeanClusterCoefficient  files(i).CVClusterCoefficient  ...
+                    files(i).MeanEdges files(i).CVEdges ...
                     };
             end
+
              writeFile(relatory,{'Name','Degree', 'CV_Degree', 'PL','CV_PL', ...
-                 'CC', 'CV_CC','Edges', 'CV_Edges'},[p.Path '\' 'Relatory'], '.dat');
+                 'CC', 'CV_CC','Edges', 'CV_Edges'},[project.Path '\' 'Relatory'], '.dat');
         end
     end
     
