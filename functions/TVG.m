@@ -128,6 +128,7 @@ classdef TVG < handle
         Hub
         Edges
         TSC
+        Tau
         MeanEdges   
         StdEdges
         CVEdges
@@ -139,7 +140,6 @@ classdef TVG < handle
         HubsIn
         HubOut
         HubsOut
-        MicroStates
         
         MeanFrameDegree
         MeanFramePathLength
@@ -229,176 +229,104 @@ classdef TVG < handle
                 t.Threshold = Threshold;
                 t.NodesLabels = Labels;
                 t.OutTvg = OutTvg;
-                t.TSCLimit=tscLim;
+                t.TSCLimit = tscLim;
                 t.NodesLocation = Location;
             end
             
         end
         
-        function error = runTVG(tvg)
+        function runTVG(tvg)
             
-            error = 0;
             tvgArray = tvg.TVGArray;
             weightedTvg = tvg.WeightedTVG;
-            
+            orientedWeightedTVG = tvg.OrientedWeightedTVG;
+            outTVG = tvg.OutTvg;
+            indices = tvg.Indices;
             locationNodes = readLocation(tvg);
             
-            if tvg.OutTvg
-                T_D_W = tvg.OrientedWeightedTVG;
-                Tau = cell2table(cell(0,5), 'VariableNames', {'time','Source','Target','Tau','Distance'});
-            end
-            
-            indices = tvg.Indices;
-            HomoEle=zeros(tvg.NumNodes,2);
+            tau = cell2table(cell(0,5), 'VariableNames', {'time','Source','Target','Tau','Distance'});
+         
+            parfor j=1:tvg.Length
+                
+                M = tvgArray(:,:,j);
 
-            if tvg.OutTvg
-                parfor j=1:tvg.Length
-                    
-                    M = tvgArray(:,:,j);
-                    MicroStates(j,:) = M(:);
-                    
-                    A = T_D_W(:,:,j);
-                    t = tvg.TAUcalc(double(A), locationNodes,j);
+                if outTVG
+                    A = orientedWeightedTVG(:,:,j);
+                    t = tvg.TAUcalc(double(A), locationNodes, j);
                     if(~isempty(t))
-                        Tau = vertcat(Tau, t);
+                        tau = vertcat(tau, t);
                     end
-                    
-                    g = GraphM(M);
-                    
-                    if find(strcmp(indices, tvg.DEGREE_NAME))
-                        [Degree(:,j),MeanDegree(:,j), ...
-                            StdDegree(:,j)]  = g.binDegree();
-                    end
-                    
-                    if find(strcmp(indices, tvg.CLUSTERCOEFFICIENT_NAME))
-                        [Cluster(:,j)] = g.cluster();
-                    end
-                    if find(strcmp(indices, tvg.PATHLENGTH_NAME))
-                        PathLength(:,j)  = g.pathLength();
-                    end
-                    
-                    if find(strcmp(indices, tvg.RADIUS_NAME))
-                        Radius(:,j)  = g.radius();
-                    end
-                    
-                    if find(strcmp(indices, tvg.DIAMETER_NAME))
-                        Diameter(:,j)  = g.diameter();
-                    end
-                    
-                    if find(strcmp(indices, tvg.CLOSENESS_NAME))
-                        Closeness(:,j)  = g.closeness();
-                    end
-                    
-                    if find(strcmp(indices, tvg.BETWEENNESS_NAME))
-                        Betweenness(:,j)  = g.betweenness();
-                    end
-                    
-                    if find(strcmp(indices, tvg.ERANGE_NAME))
-                        [~,~,~,ERange(:,j)]  = g.erange();
-                    end
-                    
-                    if find(strcmp(indices, tvg.FINDWALK_NAME))
-                        [~,FindWalk(:,j)]  = g.findwalks();
-                    end
-                    
-                    if find(strcmp(indices, tvg.MODULARITY_NAME))
-                        [~,Modularity(:,j)]  = g.modularity_und(1);
-                    end
-                    
-                    if find(strcmp(indices, tvg.RICHCLUB_NAME))
-                        [~,aux]  = g.rich_club_bd();
-                        RichClub(:,j) = mean(aux);
-                    end
-                    
-                    h = 0; %g.eIndex(tvg.Labels);
-                    HomoEle = HomoEle + h;
-                    
-                    HubDeg(:,j)= g.hub()';
-                    Edges(:,j) = g.edges();
-                    
                 end
-            else
-                parfor j=1:tvg.Length
-                    M = tvgArray(:,:,j);
-                    MicroStates(j,:) = M(:);
-                    g = GraphM(M);
-                    
-                    if find(strcmp(indices, tvg.DEGREE_NAME))
-                        [Degree(:,j),MeanDegree(:,j), ...
-                            StdDegree(:,j)]  = g.binDegree();
-                    end
-                    
-                    if find(strcmp(indices, tvg.CLUSTERCOEFFICIENT_NAME))
-                        [Cluster(:,j)] = g.cluster();
-                    end
-                    if find(strcmp(indices, tvg.PATHLENGTH_NAME))
-                        PathLength(:,j)  = g.pathLength();
-                    end
-                    
-                    if find(strcmp(indices, tvg.RADIUS_NAME))
-                        Radius(:,j)  = g.radius();
-                    end
-                    
-                    if find(strcmp(indices, tvg.DIAMETER_NAME))
-                        Diameter(:,j)  = g.diameter();
-                    end
-                    
-                    if find(strcmp(indices, tvg.CLOSENESS_NAME))
-                        Closeness(:,j)  = g.closeness();
-                    end
-                    
-                    if find(strcmp(indices, tvg.BETWEENNESS_NAME))
-                        Betweenness(:,j)  = g.betweenness();
-                    end
-                    
-                    if find(strcmp(indices, tvg.ERANGE_NAME))
-                        [~,~,~,ERange(:,j)]  = g.erange();
-                    end
-                    
-                    if find(strcmp(indices, tvg.FINDWALK_NAME))
-                        [~,FindWalk(:,j)]  = g.findwalks();
-                    end
-                    
-                    if find(strcmp(indices, tvg.MODULARITY_NAME))
-                        [~,Modularity(:,j)]  = g.modularity_und(1);
-                    end
-                    
-                    if find(strcmp(indices, tvg.RICHCLUB_NAME))
-                        [~,aux]  = g.rich_club_bd();
-                        RichClub(:,j) = mean(aux);
-                    end
-                    
-                    h = 0; % g.eIndex(tvg.Labels);
-                    HomoEle = HomoEle + h;
-                    
-                    HubDeg(:,j)= g.hub()';
-                    Edges(:,j) = g.edges();
-                    
+                
+                g = GraphM(M);
+                
+                if find(strcmp(indices, tvg.DEGREE_NAME))
+                    [degree(:,j), ~, ~] = g.binDegree();
                 end
+                
+                if find(strcmp(indices, tvg.CLUSTERCOEFFICIENT_NAME))
+                    [Cluster(:,j)] = g.cluster();
+                end
+                if find(strcmp(indices, tvg.PATHLENGTH_NAME))
+                    pathLength(:,j) = g.pathLength();
+                end
+                
+                if find(strcmp(indices, tvg.RADIUS_NAME))
+                    radius(:,j) = g.radius();
+                end
+                
+                if find(strcmp(indices, tvg.DIAMETER_NAME))
+                    diameter(:,j) = g.diameter();
+                end
+                
+                if find(strcmp(indices, tvg.CLOSENESS_NAME))
+                    closeness(:,j) = g.closeness();
+                end
+                
+                if find(strcmp(indices, tvg.BETWEENNESS_NAME))
+                    betweenness(:,j) = g.betweenness();
+                end
+                
+                if find(strcmp(indices, tvg.ERANGE_NAME))
+                    [~,~,~,eRange(:,j)] = g.erange();
+                end
+                
+                if find(strcmp(indices, tvg.FINDWALK_NAME))
+                    [~,findWalk(:,j)] = g.findwalks();
+                end
+                
+                if find(strcmp(indices, tvg.MODULARITY_NAME))
+                    [~,modularity(:,j)] = g.modularity_und(1);
+                end
+                
+                if find(strcmp(indices, tvg.RICHCLUB_NAME))
+                    [~,aux]  = g.rich_club_bd();
+                    richClub(:,j) = mean(aux);
+                end
+                
+                hubDeg(:,j)= g.hub()';
+                edges(:,j) = g.edges();
                 
             end
 
-
-            tvg.Hub = HubDeg;
-            tvg.Edges = Edges;
+            tvg.Hub = hubDeg;
+            tvg.Edges = edges;
             
-            if (tvg.TSCLimit>0)
+            if (tvg.TSCLimit > 0)
                 tvg.TSC = tsc(tvgArray, tvg.TSCLimit);
-            else
-                tvg.TSC = -1;   %% not calculated
             end
             
             if find(strcmp(indices, tvg.DEGREE_NAME))
-                tvg.Degree = Degree;
-                tvg.MeanFrameDegree = mean(Degree)';
+                tvg.Degree = degree;
+                tvg.MeanFrameDegree = mean(degree)';
                 tvg.MeanDegree = mean(tvg.MeanFrameDegree);
                 tvg.StdDegree = std(tvg.MeanFrameDegree);
                 tvg.CVDegree =  tvg.StdDegree / tvg.MeanDegree;
             end
             
             if find(strcmp(indices, tvg.PATHLENGTH_NAME))
-                tvg.PathLength = PathLength;
-                tvg.MeanFramePathLength = mean(PathLength)';
+                tvg.PathLength = pathLength;
+                tvg.MeanFramePathLength = mean(pathLength)';
                 tvg.MeanPathLength = mean(tvg.MeanFramePathLength);
                 tvg.StdPathLength = std(tvg.MeanFramePathLength);
                 tvg.CVPathLength = tvg.StdPathLength /tvg.MeanPathLength;
@@ -413,7 +341,7 @@ classdef TVG < handle
             end
             
             if find(strcmp(indices, tvg.RADIUS_NAME))
-                tvg.Radius = Radius;
+                tvg.Radius = radius;
                 tvg.MeanFrameRadius = tvg.Radius;
                 tvg.MeanRadius = mean(tvg.Radius);
                 tvg.StdRadius = std(tvg.Radius);
@@ -421,7 +349,7 @@ classdef TVG < handle
             end
 
             if find(strcmp(indices, tvg.DIAMETER_NAME))
-                tvg.Diameter = Diameter;
+                tvg.Diameter = diameter;
                 tvg.MeanFrameDiameter = tvg.Diameter;
                 tvg.MeanDiameter = mean(tvg.Diameter);
                 tvg.StdDiameter = std(tvg.Diameter);
@@ -429,7 +357,7 @@ classdef TVG < handle
             end
 
             if find(strcmp(indices, tvg.CLOSENESS_NAME))
-                tvg.Closeness = Closeness;
+                tvg.Closeness = closeness;
                 tvg.MeanFrameCloseness = mean(tvg.Closeness)';
                 tvg.MeanCloseness = mean(tvg.MeanFrameCloseness);
                 tvg.StdCloseness = std(tvg.MeanFrameCloseness);
@@ -437,7 +365,7 @@ classdef TVG < handle
             end
 
             if find(strcmp(indices, tvg.BETWEENNESS_NAME))
-                tvg.Betweenness = Betweenness;
+                tvg.Betweenness = betweenness;
                 tvg.MeanFrameBetweenness = mean(tvg.Betweenness)';
                 tvg.MeanBetweenness = mean(tvg.MeanFrameBetweenness);
                 tvg.StdBetweenness = std(tvg.MeanFrameBetweenness);
@@ -445,7 +373,7 @@ classdef TVG < handle
             end
             
             if find(strcmp(indices, tvg.ERANGE_NAME))
-                tvg.ERange = ERange;
+                tvg.ERange = eRange;
                 tvg.MeanFrameERange = tvg.ERange;
                 tvg.MeanERange = mean(tvg.MeanFrameERange);
                 tvg.StdERange = std(tvg.MeanFrameERange);
@@ -453,7 +381,7 @@ classdef TVG < handle
             end
             
             if find(strcmp(indices, tvg.FINDWALK_NAME))
-                tvg.FindWalk = FindWalk;
+                tvg.FindWalk = findWalk;
                 tvg.MeanFrameFindWalk = tvg.FindWalk;
                 tvg.MeanFindWalk = mean(tvg.MeanFrameFindWalk);
                 tvg.StdFindWalk = std(tvg.MeanFrameFindWalk);
@@ -461,7 +389,7 @@ classdef TVG < handle
             end
 
             if find(strcmp(indices, tvg.MODULARITY_NAME))
-                tvg.Modularity = Modularity;
+                tvg.Modularity = modularity;
                 tvg.MeanFrameModularity =  tvg.Modularity;
                 tvg.MeanModularity = mean(tvg.MeanFrameModularity);
                 tvg.StdModularity = std(tvg.MeanFrameModularity);
@@ -469,17 +397,13 @@ classdef TVG < handle
             end
 
             if find(strcmp(indices, tvg.RICHCLUB_NAME))
-                tvg.RichClub = RichClub;
+                tvg.RichClub = richClub;
                 tvg.MeanFrameRichClub =tvg.RichClub;
                 tvg.MeanRichClub = mean(tvg.MeanFrameRichClub);
                 tvg.StdRichClub = std(tvg.MeanFrameRichClub);
                 tvg.CVRichClub = tvg.StdRichClub / tvg.MeanRichClub;
             end
-            
-            %A = logical(MicroStates);
-            %B = bi2de(A);
-            %tvg.MicroStates = B;
-            
+           
             tvg.MeanEdges = mean(tvg.Edges);
             tvg.StdEdges = std(tvg.Edges);
             tvg.CVEdges = tvg.StdEdges / tvg.MeanEdges;
@@ -493,80 +417,85 @@ classdef TVG < handle
             Degree_Out = squeeze(sum(weightedTvg,2));
             HubDeg_Out = Degree_Out > (mean(Degree_Out)+ 2*std(Degree_Out,1));
             
-            tvg.HubSim = sum(HubDeg,2);
+            tvg.HubSim = sum(hubDeg,2);
             tvg.Hubs = tvg.HubSim./sum(tvg.HubSim,1);
             tvg.HubIn = sum(HubDeg_In,2);
             tvg.HubsIn = tvg.HubIn./sum(tvg.HubIn,1);
             tvg.HubOut = sum(HubDeg_Out,2);
             tvg.HubsOut = tvg.HubOut./sum(tvg.HubOut,1);
-            if tvg.OutTvg
-                Freq=histcounts(Tau.Tau,tvg.TaoMax-tvg.TaoMin+1)';
-                Freq(1)=Freq(1)/2; % disregard double count in simetric edges
-                ctau=(tvg.TaoMin+1:tvg.TaoMax+1)';
-                Ht=[array2table(ctau) array2table(Freq)];
-                NameSync = 'MoS';
-                writetable(Ht, [tvg.FilePath '\' tvg.Filename '_TAU_Hist_' NameSync  '.txt'], 'Delimiter','\t');
-                writetable(Tau, [tvg.FilePath '\' tvg.Filename '_TAU_' NameSync  '.txt'], 'Delimiter','\t');
-            end
+
+            tvg.Tau = tau;
+            
 
         end
         
-        function write(t)
+        function write(tvg)
             NameSync = 'MoS';
-            L = t.Length - 1;
-            indices = t.Indices;
+            length = tvg.Length - 1;
+            indices = tvg.Indices;
             
-            DistHubs = horzcat(t.NodesLabels,num2cell(t.HubSim), num2cell(t.HubIn), num2cell(t.HubOut), num2cell(t.Hubs), num2cell(t.HubsIn), num2cell(t.HubsOut));  
-            TimeSerie=horzcat((0:1:L)',t.Edges',t.MeanFrameClusterCoefficient);
-            TimeStat=horzcat(t.MeanEdges,t.StdEdges,t.MeanClusterCoefficient,t.StdClusterCoefficient);
+            DistHubs = horzcat(tvg.NodesLabels,num2cell(tvg.HubSim), num2cell(tvg.HubIn), num2cell(tvg.HubOut), num2cell(tvg.Hubs), num2cell(tvg.HubsIn), num2cell(tvg.HubsOut));  
+            TimeSerie=horzcat((0:1:length)',tvg.Edges',tvg.MeanFrameClusterCoefficient);
+            TimeStat=horzcat(tvg.MeanEdges,tvg.StdEdges,tvg.MeanClusterCoefficient,tvg.StdClusterCoefficient);
 
-            if find(strcmp(indices, t.DEGREE_NAME))
-                writeFile(horzcat((0:1:L)', t.MeanFrameDegree),{'Frame','MeanDegree'},[t.FilePath '\' t.Filename '_Degree'], '.txt');
+            if find(strcmp(indices, tvg.DEGREE_NAME))
+                writeFile(horzcat((0:1:length)', tvg.MeanFrameDegree),{'Frame','MeanDegree'},[tvg.FilePath '\' tvg.Filename '_Degree'], '.txt');
             end
-            if find(strcmp(indices, t.PATHLENGTH_NAME))
-                writeFile(horzcat((0:1:L)', t.MeanFramePathLength),{'Frame','PL'},[t.FilePath '\' t.Filename '_PathLength'], '.txt');
+
+            if find(strcmp(indices, tvg.PATHLENGTH_NAME))
+                writeFile(horzcat((0:1:length)', tvg.MeanFramePathLength),{'Frame','PL'},[tvg.FilePath '\' tvg.Filename '_PathLength'], '.txt');
             end
-            if find(strcmp(indices, t.CLUSTERCOEFFICIENT_NAME))
-                writeFile(horzcat((0:1:L)', t.MeanFrameClusterCoefficient),{'Frame','CC'},[t.FilePath '\' t.Filename '_CC'], '.txt'); 
+
+            if find(strcmp(indices, tvg.CLUSTERCOEFFICIENT_NAME))
+                writeFile(horzcat((0:1:length)', tvg.MeanFrameClusterCoefficient),{'Frame','CC'},[tvg.FilePath '\' tvg.Filename '_CC'], '.txt'); 
                 writeFile( ...
                     TimeSerie, ...
                     {'Time' 'Edges' 'CC'}, ...
-                    [t.FilePath '\' t.Filename '_iTime_' NameSync], ...
+                    [tvg.FilePath '\' tvg.Filename '_iTime_' NameSync], ...
                     '.txt');
                  writeFile( ...
                     TimeStat, ...
                     {'edgMed' 'edgStd' 'cluMed', 'cluStd'}, ...
-                    [t.FilePath '\' t.Filename '_sTime_' NameSync], ...
+                    [tvg.FilePath '\' tvg.Filename '_sTime_' NameSync], ...
                     '.txt');
             else
                 writeFile( ...
                     TimeSerie, ...
                     {'Time' 'Edges'}, ...
-                    [t.FilePath '\' t.Filename '_iTime_' NameSync], ...
+                    [tvg.FilePath '\' tvg.Filename '_iTime_' NameSync], ...
                     '.txt');
                 writeFile( ...
                     TimeStat, ...
                     {'edgMed' 'edgStd'}, ...
-                    [t.FilePath '\' t.Filename '_sTime_' NameSync], ...
+                    [tvg.FilePath '\' tvg.Filename '_sTime_' NameSync], ...
                     '.txt');
             
             end
             
             
-            if(t.TSC>=0)
-                writeFile(t.TSC,{'TSC'},[t.FilePath '\' t.Filename '_TSC'], '.txt');
+            if(tvg.TSC>=0)
+                writeFile(tvg.TSC,{'TSC'},[tvg.FilePath '\' tvg.Filename '_TSC'], '.txt');
             end
-            
+
+            if tvg.OutTvg
+                Freq = histcounts(tvg.Tau.Tau, tvg.TaoMax - tvg.TaoMin+1)';
+                Freq(1) = Freq(1) / 2; % disregard double count in simetric edges
+                ctau=(tvg.TaoMin+1 : tvg.TaoMax+1)';
+                Ht=[array2table(ctau) array2table(Freq)];
+
+                writetable(Ht, [tvg.FilePath '\' tvg.Filename '_TAU_Hist_' NameSync  '.txt'], 'Delimiter','\t');
+                writetable(tvg.Tau, [tvg.FilePath '\' tvg.Filename '_TAU_' NameSync  '.txt'], 'Delimiter','\t');
+            end
             
              writeFile( ...
                 DistHubs, ...
                 {'Label', 'HubSim', 'HubIn', 'HubOut',	'Hubs',	'HubsIn', 'HubsOut'}, ...
-                [t.FilePath '\' t.Filename '_Hubs_' NameSync], ...
+                [tvg.FilePath '\' tvg.Filename '_Hubs_' NameSync], ...
                 '.txt');
           
            
         end
-        function tau = TAUcalc(tvg, A, locationNodes, Time)
+        function tau = TAUcalc(~, A, locationNodes, Time)
             
             labels = locationNodes.Properties.RowNames;
             
