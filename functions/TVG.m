@@ -87,7 +87,6 @@ classdef TVG < handle
         };
     
         CHECK = { ...
-            
             TVG.DEGREE_DEFAULT ...
             TVG.PATHLENGTH_DEFAULT ...
             TVG.CLUSTERCOEFFICIENT_DEFAULT ...
@@ -99,38 +98,36 @@ classdef TVG < handle
             TVG.FINDWALK_DEFAULT ...
             TVG.MODULARITY_DEFAULT ...
             TVG.RICHCLUB_DEFAULT ...
-            
-        
         };
     end
     
     properties (GetAccess = public, SetAccess = protected)
-        T           % tensor connection matrix
-        T_W         % tensor connection weighted matrix
-        T_D_W       % tensor connection oriented weighted matrix
-        L           % length of TVG
+        TVGArray
+        WeightedTVG
+        OrientedWeightedTVG
+        Length
 
-        File        % name of the file
-        Path        % path for the fila
-        Labels      % labels of the nodes
-        Indices     % Indeces to calculate
-        Location
+        Filename
+        FilePath
+        NodesLabels
+        Indices
+        NodesLocation
         
-        InitialTime % initial time of the time series
-        FinalTime   % final time of the time series
-        NumNodes    % amount of nodes
-        SlidWindow  % windows size
-        TaoMin      % minimal size of the delay time
-        TaoMax      % maximal size of the delay time
-        Threshold   % cut limit of the synchronization
-        OutTvg      % Flag to calc or not all TVG edges
-        TSCLim      % Limt fot TSC calc
+        InitialTime
+        FinalTime
+        NumNodes
+        SlidWindow
+        TaoMin
+        TaoMax
+        Threshold
+        OutTvg
+        TSCLimit
         
-        Degree      %
-        Weight      %
-        Hub         %
-        Edges       %
-        tsc
+        Degree
+        Weight
+        Hub
+        Edges
+        TSC
         MeanEdges   
         StdEdges
         CVEdges
@@ -142,7 +139,6 @@ classdef TVG < handle
         HubsIn
         HubOut
         HubsOut
-        
         MicroStates
         
         MeanFrameDegree
@@ -212,15 +208,17 @@ classdef TVG < handle
         REA
  
     end
-    methods 
+    methods
+
+        % Get and save the TVG parameters
         function t = TVG(File, Path, T, T_W,T_D_W, Labels, Indices, InitialTime, FinalTime, NumNodes, SlidWindow, TaoMin, TaoMax, Threshold,tscLim,OutTvg,Location)
             if nargin > 0
-                t.T = T;
-                t.T_W = T_W;
-                t.T_D_W = T_D_W;
-                t.L = length(t.T(1,1,:));
-                t.File = File;
-                t.Path = Path;
+                t.TVGArray = T;
+                t.WeightedTVG = T_W;
+                t.OrientedWeightedTVG = T_D_W;
+                t.Length = length(t.TVGArray(1,1,:));
+                t.Filename = File;
+                t.FilePath = Path;
                 t.Indices = Indices;
                 t.InitialTime = InitialTime;
                 t.FinalTime = FinalTime;
@@ -229,37 +227,34 @@ classdef TVG < handle
                 t.TaoMin = TaoMin;
                 t.TaoMax = TaoMax;
                 t.Threshold = Threshold;
-                t.Labels = Labels;
+                t.NodesLabels = Labels;
                 t.OutTvg = OutTvg;
-                t.TSCLim=tscLim;
-                t.Location = Location;
+                t.TSCLimit=tscLim;
+                t.NodesLocation = Location;
             end
             
         end
+        
         function error = runTVG(tvg)
             
             error = 0;
-            T = tvg.T;
-            T_W = tvg.T_W;
+            tvgArray = tvg.TVGArray;
+            weightedTvg = tvg.WeightedTVG;
             
             locationNodes = readLocation(tvg);
             
             if tvg.OutTvg
-                T_D_W = tvg.T_D_W;
+                T_D_W = tvg.OrientedWeightedTVG;
                 Tau = cell2table(cell(0,5), 'VariableNames', {'time','Source','Target','Tau','Distance'});
             end
             
             indices = tvg.Indices;
             HomoEle=zeros(tvg.NumNodes,2);
 
-            tStart = tic;
-            hbar = parfor_progressbar(tvg.L,'Computing Network');  %create the progress bar
-            %multiWaitbar('Network',0, 'Color', 'b', 'CanCancel','on', 'CancelFcn', @(a,b) disp( ['Cancel ',a] ));
             if tvg.OutTvg
-                parfor j=1:tvg.L  %parfor
-                    hbar.iterate(1);
+                parfor j=1:tvg.Length
                     
-                    M = T(:,:,j);
+                    M = tvgArray(:,:,j);
                     MicroStates(j,:) = M(:);
                     
                     A = T_D_W(:,:,j);
@@ -323,9 +318,8 @@ classdef TVG < handle
                     
                 end
             else
-                parfor j=1:tvg.L  %parfor
-                    hbar.iterate(1);
-                    M = T(:,:,j);
+                parfor j=1:tvg.Length
+                    M = tvgArray(:,:,j);
                     MicroStates(j,:) = M(:);
                     g = GraphM(M);
                     
@@ -384,14 +378,14 @@ classdef TVG < handle
                 
             end
 
-            close(hbar);
 
             tvg.Hub = HubDeg;
             tvg.Edges = Edges;
-            if (tvg.TSCLim>0)
-                tvg.tsc = tsc(T, tvg.TSCLim);
+            
+            if (tvg.TSCLimit>0)
+                tvg.TSC = tsc(tvgArray, tvg.TSCLimit);
             else
-                tvg.tsc = -1;   %% not calculated
+                tvg.TSC = -1;   %% not calculated
             end
             
             if find(strcmp(indices, tvg.DEGREE_NAME))
@@ -490,13 +484,13 @@ classdef TVG < handle
             tvg.StdEdges = std(tvg.Edges);
             tvg.CVEdges = tvg.StdEdges / tvg.MeanEdges;
             
-            tvg.REA = REA(sum(T,3), sum(T_W,3), tvg.File, tvg.Path, tvg.Labels);
+            tvg.REA = REA(sum(tvgArray,3), sum(weightedTvg,3), tvg.Filename, tvg.FilePath, tvg.NodesLabels);
             tvg.REA.runREA();
             tvg.REA.write();
             
-            Degree_In = squeeze(sum(T_W,1));
+            Degree_In = squeeze(sum(weightedTvg,1));
             HubDeg_In = Degree_In > (mean(Degree_In)+ 2*std(Degree_In,1));
-            Degree_Out = squeeze(sum(T_W,2));
+            Degree_Out = squeeze(sum(weightedTvg,2));
             HubDeg_Out = Degree_Out > (mean(Degree_Out)+ 2*std(Degree_Out,1));
             
             tvg.HubSim = sum(HubDeg,2);
@@ -511,63 +505,63 @@ classdef TVG < handle
                 ctau=(tvg.TaoMin+1:tvg.TaoMax+1)';
                 Ht=[array2table(ctau) array2table(Freq)];
                 NameSync = 'MoS';
-                writetable(Ht, [tvg.Path '\' tvg.File '_TAU_Hist_' NameSync  '.txt'], 'Delimiter','\t');
-                writetable(Tau, [tvg.Path '\' tvg.File '_TAU_' NameSync  '.txt'], 'Delimiter','\t');
+                writetable(Ht, [tvg.FilePath '\' tvg.Filename '_TAU_Hist_' NameSync  '.txt'], 'Delimiter','\t');
+                writetable(Tau, [tvg.FilePath '\' tvg.Filename '_TAU_' NameSync  '.txt'], 'Delimiter','\t');
             end
 
         end
         
         function write(t)
             NameSync = 'MoS';
-            L = t.L - 1;
+            L = t.Length - 1;
             indices = t.Indices;
             
-            DistHubs = horzcat(t.Labels,num2cell(t.HubSim), num2cell(t.HubIn), num2cell(t.HubOut), num2cell(t.Hubs), num2cell(t.HubsIn), num2cell(t.HubsOut));  
+            DistHubs = horzcat(t.NodesLabels,num2cell(t.HubSim), num2cell(t.HubIn), num2cell(t.HubOut), num2cell(t.Hubs), num2cell(t.HubsIn), num2cell(t.HubsOut));  
             TimeSerie=horzcat((0:1:L)',t.Edges',t.MeanFrameClusterCoefficient);
             TimeStat=horzcat(t.MeanEdges,t.StdEdges,t.MeanClusterCoefficient,t.StdClusterCoefficient);
 
             if find(strcmp(indices, t.DEGREE_NAME))
-                writeFile(horzcat((0:1:L)', t.MeanFrameDegree),{'Frame','MeanDegree'},[t.Path '\' t.File '_Degree'], '.txt');
+                writeFile(horzcat((0:1:L)', t.MeanFrameDegree),{'Frame','MeanDegree'},[t.FilePath '\' t.Filename '_Degree'], '.txt');
             end
             if find(strcmp(indices, t.PATHLENGTH_NAME))
-                writeFile(horzcat((0:1:L)', t.MeanFramePathLength),{'Frame','PL'},[t.Path '\' t.File '_PathLength'], '.txt');
+                writeFile(horzcat((0:1:L)', t.MeanFramePathLength),{'Frame','PL'},[t.FilePath '\' t.Filename '_PathLength'], '.txt');
             end
             if find(strcmp(indices, t.CLUSTERCOEFFICIENT_NAME))
-                writeFile(horzcat((0:1:L)', t.MeanFrameClusterCoefficient),{'Frame','CC'},[t.Path '\' t.File '_CC'], '.txt'); 
+                writeFile(horzcat((0:1:L)', t.MeanFrameClusterCoefficient),{'Frame','CC'},[t.FilePath '\' t.Filename '_CC'], '.txt'); 
                 writeFile( ...
                     TimeSerie, ...
                     {'Time' 'Edges' 'CC'}, ...
-                    [t.Path '\' t.File '_iTime_' NameSync], ...
+                    [t.FilePath '\' t.Filename '_iTime_' NameSync], ...
                     '.txt');
                  writeFile( ...
                     TimeStat, ...
                     {'edgMed' 'edgStd' 'cluMed', 'cluStd'}, ...
-                    [t.Path '\' t.File '_sTime_' NameSync], ...
+                    [t.FilePath '\' t.Filename '_sTime_' NameSync], ...
                     '.txt');
             else
                 writeFile( ...
                     TimeSerie, ...
                     {'Time' 'Edges'}, ...
-                    [t.Path '\' t.File '_iTime_' NameSync], ...
+                    [t.FilePath '\' t.Filename '_iTime_' NameSync], ...
                     '.txt');
                 writeFile( ...
                     TimeStat, ...
                     {'edgMed' 'edgStd'}, ...
-                    [t.Path '\' t.File '_sTime_' NameSync], ...
+                    [t.FilePath '\' t.Filename '_sTime_' NameSync], ...
                     '.txt');
             
             end
             
             
-            if(t.tsc>=0)
-                writeFile(t.tsc,{'TSC'},[t.Path '\' t.File '_TSC'], '.txt');
+            if(t.TSC>=0)
+                writeFile(t.TSC,{'TSC'},[t.FilePath '\' t.Filename '_TSC'], '.txt');
             end
             
             
              writeFile( ...
                 DistHubs, ...
                 {'Label', 'HubSim', 'HubIn', 'HubOut',	'Hubs',	'HubsIn', 'HubsOut'}, ...
-                [t.Path '\' t.File '_Hubs_' NameSync], ...
+                [t.FilePath '\' t.Filename '_Hubs_' NameSync], ...
                 '.txt');
           
            

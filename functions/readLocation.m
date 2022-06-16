@@ -7,13 +7,13 @@
 
 function Data = readLocation(tvg)
     
-    if isempty(tvg.Location)
-        for i=1:length(tvg.Labels)
+    if isempty(tvg.NodesLocation)
+        for i=1:length(tvg.NodesLabels)
             x(i)=rand(); y(i)=rand();
         end
     else
-        lb=readtable(tvg.Location);
-        for i=1:length(tvg.Labels)
+        lb=readtable(tvg.NodesLocation);
+        for i=1:length(tvg.NodesLabels)
             id=find(ismember(upper(lb{:,1}),upper(tvg.Labels{i})));
             if isempty(id)
                 x(i)=0;y(i)=0;
@@ -27,6 +27,6 @@ function Data = readLocation(tvg)
     
     Data = array2table([x' y']);
     Data.Properties.VariableNames = {'X' 'Y'};
-    Data.Properties.RowNames = tvg.Labels;
+    Data.Properties.RowNames = tvg.NodesLabels;
   
 end
