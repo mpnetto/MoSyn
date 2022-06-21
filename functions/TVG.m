@@ -164,6 +164,7 @@ classdef TVG < handle
         CVClusterCoefficient
 
         Tau
+        TauDist
         MeanTau
         MeanFrameTau
         StdTau
@@ -254,9 +255,9 @@ classdef TVG < handle
             indices = tvg.Indices;
             locationNodes = readLocation(tvg);
             
-            tau = cell2table(cell(0,5), 'VariableNames', {'time','Source','Target','Tau','Distance'});
-         
-            for j=1:tvg.Length
+            tau = [] ; % cell2table(cell(0,5), 'VariableNames', {'time','Source','Target','Tau','Distance'});
+            tauDistance = [] ;
+            parfor j=1:tvg.Length
                 
                 M = tvgArray(:,:,j);
 
@@ -277,8 +278,11 @@ classdef TVG < handle
                 if find(strcmp(indices, tvg.TAU_NAME))
                     a = orientedWeightedTVG(:,:,j);
                     ag = GraphM(a, locationNodes, j);
-                 
-                    tau = vertcat(tau, ag.calcTau());
+
+                    [tauValues, tauDist] = ag.calcTau();
+                    tau = vertcat(tau, tauValues);
+                    tauDistance = vertcat(tauDistance, tauDist);
+
                 end
                 
                 if find(strcmp(indices, tvg.RADIUS_NAME))
@@ -352,6 +356,7 @@ classdef TVG < handle
 
              if find(strcmp(indices, tvg.TAU_NAME))
                 tvg.Tau = tau;
+                tvg.TauDist = tauDistance;
 %                 tvg.MeanFrameTau = mean(tau)';
 %                 tvg.MeanTau = mean(tvg.MeanFrameTau);
 %                 tvg.StdTau = std(tvg.MeanTau);
@@ -488,13 +493,22 @@ classdef TVG < handle
             end
 
             if find(strcmp(indices, tvg.TAU_NAME))
-                Freq = histcounts(tvg.Tau.Tau, tvg.TaoMax - tvg.TaoMin+1)';
+                % cell2table(cell(0,5), 'VariableNames', {'time','Source','Target','Tau','Distance'});
+                Freq = histcounts(tvg.Tau(:,4), tvg.TaoMax - tvg.TaoMin+1)';
                 Freq(1) = Freq(1) / 2; % disregard double count in simetric edges
                 ctau=(tvg.TaoMin+1 : tvg.TaoMax+1)';
                 Ht=[array2table(ctau) array2table(Freq)];
 
+
+
+                tauTable = [array2table(tvg.Tau, 'VariableNames', {'time','Source','Target','Tau'}) array2table(tvg.TauDist, 'VariableNames', {'Distance'})];
+
+                tauTable.Source = tvg.NodesLabels( tauTable.Source);
+                tauTable.Target = tvg.NodesLabels( tauTable.Target);
+
+
                 writetable(Ht, [tvg.FilePath '\' tvg.Filename '_TAU_Hist_' NameSync  '.txt'], 'Delimiter','\t');
-                writetable(tvg.Tau, [tvg.FilePath '\' tvg.Filename '_TAU_' NameSync  '.txt'], 'Delimiter','\t');
+                writetable(tauTable, [tvg.FilePath '\' tvg.Filename '_TAU_' NameSync  '.txt'], 'Delimiter','\t');
             end
             
             
@@ -509,32 +523,6 @@ classdef TVG < handle
                 '.txt');
           
            
-        end
-        function tau = TAUcalc(~, A, locationNodes, Time)
-            
-            labels = locationNodes.Properties.RowNames;
-            
-            G = digraph(A,labels);
-            e = splitvars(G.Edges);
-            
-            for z = 1:height(e)
-                row = e(z,:);
-                node1 = table2cell(row(:,1));
-                node2 = table2cell(row(:,2));
-                
-                coordNode1 = table2array(locationNodes(node1,:));
-                coordNode2 = table2array(locationNodes(node2,:));
-                
-                Distance(z,:) = norm(coordNode2 - coordNode1);
-            end
-            if (height(e)>0)
-                ti(1:height(e))=Time;
-                tau = [array2table(ti') e array2table(Distance)];
-                tau.Properties.VariableNames = {'time','Source','Target','Tau','Distance'};
-            else
-                tau=[];
-            end
-            
         end
 
     end

@@ -25,8 +25,6 @@ function Data = readLocation(tvg)
     end
     
     
-    Data = array2table([x' y']);
-    Data.Properties.VariableNames = {'X' 'Y'};
-    Data.Properties.RowNames = tvg.NodesLabels;
+    Data = [x' y'];
   
 end

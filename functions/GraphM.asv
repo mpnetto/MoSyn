@@ -763,7 +763,7 @@ classdef GraphM < handle
             Ek = g.Ek;
         end
 
-        function [tau, dist] = calcTau(g)
+        function [tau dist] = calcTau(g)
             
 %             labels = g.nodesLocation.Properties.RowNames;
             
@@ -812,7 +812,7 @@ classdef GraphM < handle
                 coordNode1 = g.nodesLocation(node1,:);
                 coordNode2 = g.nodesLocation(node2,:);
 
-                dist(z,:) = norm(coordNode2 - coordNode1);
+                Distance(z,:) = norm(coordNode2 - coordNode1);
             end
 
             if (height(ex)>0)
@@ -820,7 +820,6 @@ classdef GraphM < handle
                 tau = [ti' ex ]; %Distance
 %                 tau.Properties.VariableNames = {'time','Source','Target','Tau','Distance'};
             else
-                dist=[];
                 tau=[];
             end
             
