@@ -9,15 +9,11 @@ function [Data,Labels] = readFile(file)
     % Abre Arquivo
     fac = fopen(file);
     
-    % Pega o conteudo do cabe�alho
+    % Pega o conteudo do cabeçalho
     cabecalho = fgets(fac);
     
     % Retorna ponteiro a posicao inicial
     frewind(fac);
-
-    pos = find(isletter(cabecalho), 1, 'last');
-
-    cabecalho = extractBefore(cabecalho,pos);
     
     % Estipula delimitador (Nesse caso o tab)
     if any(cabecalho == 9)
@@ -27,7 +23,12 @@ function [Data,Labels] = readFile(file)
     end
     
     % Pega a quantidade de Colunas
-    numCols = numel(strfind(cabecalho,delimiter)) + 1;
+    numCols = numel(strfind(cabecalho,delimiter));
+    
+    % Checa se o ultimo caracter é um delimitador
+    if cabecalho(end-1) ~= delimiter
+        numCols = numCols + 1;
+    end
 
     formatLabel = repmat('%s',1,numCols);
     formatData = repmat('%f',1,numCols);

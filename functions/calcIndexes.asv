@@ -7,11 +7,12 @@
 
 %mex -v -largeArrayDims motif_sync_mex.cpp CXXFLAGS="$CXXFLAGS -fopenmp" LDFLAGS="$LDFLAGS -fopenmp"
 
-function [project] = calcIndexes(path, files, nodeLocation, indexes, initialTime, finalTime, realTime, initialFrequency, finalFrequency, hasFrequency, removeTimeColumn, acqRate, slidWindow, taoMin,taoMax, threshold, tscLim, OutTvg)
-   
+function [project] = calcIndexes(path, files, nodeLocation, indexes, initialTime, finalTime, realTime, initialFrequency, finalFrequency, hasFrequency, removeTimeColumn, acqRate, slidWindow, taoMin, taoMax, threshold, tscLim, calculateIndexes)
+
+    project = -1;
+
     % The number of subjects is the number of files provided
     numSubjects = length(files);
-
 
     % Create a matrix with the (subject, value, index), in order to get the
     % value of each index selected for each subject
@@ -34,67 +35,89 @@ function [project] = calcIndexes(path, files, nodeLocation, indexes, initialTime
         % Extract the name and the extension
         [~,name,ext] = fileparts(filename);
 
+        if (ext == ".mat")
+             load (filename, 'TVGArray', 'TVGArray_D', 'TVGWeig_Dir','labels', 'initialTime', 'finalTime', 'realTime', 'endTime', 'initialFrequency', 'finalFrequency', 'hasFrequency', 'removeTimeColumn', 'acqRate', 'slidWindow', 'taoMin', 'taoMax', 'threshold', 'numNodes');
 
-        % Check if the extension is from an csv file or not. Get the raw
-        % data and labels from the file
-        if (ext == ".csv")
-             [data,labels] = readCsvFile(filename);
+             if ~calculateIndexes
+                 msgbox('asdasdasd', 'Warning','modal')
+                 return
+             end
         else
-             [data,labels] = readFile(filename);
+
+            % Check if the extension is from an csv file or not. Get the raw
+            % data and labels from the file
+            if (ext == ".csv")
+                [data, labels] = readCsvFile(filename);
+            elseif(ext == ".asc")
+                 [data, labels] = readFile(filename);
+            else
+               return
+            end
+    
+            % If the given start time is greater than 0, we remove from the data 
+            % the rows corresponding to the time outside the range
+            if(initialTime>0) 
+                data=data(initialTime:end,:);
+            end
+    
+            % the real end time is the numberof rows in the data, minus the slide window, minus the max TAO, minus 1
+            realEndTime = size(data,1) - slidWindow - taoMax -1;
+    
+            % Check if the the real time was provided, and that the real time is
+            % less than size of the file. If not, the end time will be 
+            if(realTime)
+                endTime = realEndTime;
+            elseif (realTime > realEndTime)
+                endTime = realEndTime;
+                msg=['Tamanho do arquivo menor do que o tempo final informado: Usando o tamanho como tempo final. Pressione OK para continuar. Arquivo:' filename];
+                uiwait(msgbox(msg, 'Warning','modal'));
+            else
+                endTime = finalTime - initialTime;
+            end
+    
+           
+             % Check if the "Allow time column" box was checked, and remove the first column
+             % if so.
+            if(removeTimeColumn)
+               data(:,1) = [];
+               labels(1,:) = [];
+            end
+    
+            % Check if the "Allow Band Pass" box was checked and apply a
+            % bandPass filter in the data
+            if(hasFrequency)
+                data = bandpass(data,[initialFrequency finalFrequency], acqRate);
+            end
+    
+            % Number of nodes is equal to to the number of columns
+            numNodes = size(data,2);
+    
+            % This method will transform the data into a motif matrix and calculate the TVG, the directed
+            % TVG and the weighted directed TVG
+            [TVGArray, TVGArray_D, TVGWeig_Dir, kkMotif] = motif_sync_mex(data, 0, endTime-initialTime, numNodes, slidWindow, taoMin, taoMax, threshold);
+
+            if (sum(TVGArray, 3) == 0)
+                msgbox("Não foi possível encontrar nenhum dado de sincronização. Por favor tentar novamente com novos parametros!")
+                return
+            end
+    
+            save ([path name '.tvg.mat'], 'TVGArray', 'TVGArray_D', 'TVGWeig_Dir', 'labels', 'initialTime', 'finalTime', 'realTime', 'endTime', 'initialFrequency', 'finalFrequency', 'hasFrequency', 'removeTimeColumn', 'acqRate', 'slidWindow', 'taoMin', 'taoMax', 'threshold', 'numNodes');
+            
         end
 
-        % If the given start time is greater than 0, we remove from the data 
-        % the rows corresponding to the time outside the range
-        if(initialTime>0) 
-            data=data(initialTime:end,:);
-        end
-
-        % the real end time is the numberof rows in the data, minus the slide window, minus the max TAO, minus 1
-        realEndTime = size(data,1) - slidWindow - taoMax -1;
-
-        % Check if the the real time was provided, and that the real time is
-        % less than size of the file. If not, the end time will be 
-        if(realTime)
-            endTime = realEndTime;
-        elseif (realTime > realEndTime)
-            endTime = realEndTime;
-            msg=['Tamanho do arquivo menor do que o tempo final informado: Usando o tamanho como tempo final. Pressione OK para continuar. Arquivo:' filename];
-            uiwait(msgbox(msg, 'Warning','modal'));
-        else
-            endTime = finalTime - initialTime;
-        end
-
-       
-         % Check if the "Allow time column" box was checked, and remove the first column
-         % if so.
-        if(removeTimeColumn)
-           data(:,1) = [];
-           labels(1,:) = [];
-        end
-
-        % Check if the "Allow Band Pass" box was checked and apply a
-        % bandPass filter in the data
-        if(hasFrequency)
-            data = bandpass(data,[initialFrequency finalFrequency], acqRate);
-        end
-
-        % Number of nodes is equal to to the number of columns
-        numNodes = size(data,2);
-
-
-        % This method will transform the data into a motif matrix and calculate the TVG, the directed
-        % TVG and the weighted directed TVG
-        [TVGArray,TVGArray_D,TVGWeig_Dir, kkMotif] = motif_sync_mex(data, 0, endTime-initialTime, numNodes, slidWindow, taoMin,taoMax, threshold);
-
-      
+          if ~calculateIndexes
+             msgbox('The  ', 'Warning','modal')
+                totalTimeEnd = toc(totalTimeStart);
+                disp("Total calculation time is: " + totalTimeEnd + " seconds.");
+             return
+         end
+        
         % This method will get the values data from the TVG and save into the
         % subject
-        subjects(i) = TVG(name, path, TVGArray, TVGArray_D,TVGWeig_Dir, labels, indexes, initialTime, endTime, numNodes, slidWindow, taoMin, taoMax, threshold ,tscLim, OutTvg ,nodeLocation);
+        subjects(i) = TVG(name, path, TVGArray, TVGArray_D, TVGWeig_Dir, labels, indexes, initialTime, endTime, numNodes, slidWindow, taoMin, taoMax, threshold ,tscLim, nodeLocation);
             
         % This method will  caculate the indexes selected by the user in the UI
-        if subjects(i).runTVG()
-            break
-        end
+        subjects(i).runTVG()
 
         % After calculate the indexes theis method will write them into
         % files
@@ -106,14 +129,14 @@ function [project] = calcIndexes(path, files, nodeLocation, indexes, initialTime
 
     end
 
-    % Finish timer and diplays Total calculation time
-    totalTimeEnd = toc(totalTimeStart);
-    disp("Total calculation time is: " + totalTimeEnd + " seconds.");
-
-    % Configure and save project
+    %Configure and save project
     project = Project(subjects, path, files, nodeLocation, indexes);
     project.runProject();
     project.write();
+
+     % Finish timer and diplays Total calculation time
+    totalTimeEnd = toc(totalTimeStart);
+    disp("Total calculation time is: " + totalTimeEnd + " seconds.");
    
 end
 

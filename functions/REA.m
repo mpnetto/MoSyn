@@ -90,16 +90,16 @@ classdef REA < handle
         
         function [weiRea, weiIn, weiOut] = weight(r)
             
-            if isempty(r.WeiDeg)
+            if isempty(r.Weight)
                 A = r.A;
                 W = r.W;
 
-                r.WeiDeg = sum(A,2);
+                r.Weight = sum(A,2);
                 r.WeiDegIn = sum(W,1)';
                 r.WeiDegOut = sum(W,2);
             end
             
-            weiRea = r.WeiDeg;
+            weiRea = r.Weight;
             weiIn = r.WeiDegIn;
             weiOut = r.WeiDegOut;
         end
@@ -260,7 +260,7 @@ classdef REA < handle
         
          function tabRea = IRea(r)
              
-             tabRea = horzcat(r.Labels,num2cell(r.Degree), num2cell(r.Cluster), num2cell(r.WeiDeg), num2cell(r.WeiDegIn), num2cell(r.WeiDegOut), num2cell(r.OutsideCon'), num2cell(r.InsideCon'), num2cell(r.Eindex'), num2cell(r.Lindex'));
+             tabRea = horzcat(r.Labels,num2cell(r.Degree), num2cell(r.Cluster), num2cell(r.Weight), num2cell(r.WeiDegIn), num2cell(r.WeiDegOut), num2cell(r.OutsideCon'), num2cell(r.InsideCon'), num2cell(r.Eindex'), num2cell(r.Lindex'));
          end
          
          function write (r)
@@ -268,7 +268,7 @@ classdef REA < handle
             REA_Tot = r.reaCorrelation(); %% with zero correlations
             REA_G = r.reaCorrelationNoZeros(); %% without zero correlations
             iREA = r.IRea();
-            if ~isempty(r.Labels)
+            if (~isempty(r.Labels) && ~isempty(REA_Tot))
                 idS=[REA_Tot{:,1}]';
                 idT=[REA_Tot{:,2}]';
                 REA_Tot(:,1)=r.Labels(idS);

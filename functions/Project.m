@@ -14,35 +14,39 @@ classdef Project < handle
         CLUSTERCOEFFICIENT_NAME = 'ClusterCoefficient';
         CLUSTERCOEFFICIENT_TXT = 'The cluster coefficient of a project is the average of the subjects cluster coefficient.';
 
-        RADIUS = 4;
+        TAU = 4;
+        TAU_NAME = 'Tau';
+        TAU_TXT = 'todo';
+
+        RADIUS = 5;
         RADIUS_NAME = 'Radius';
         RADIUS_TXT = 'The radius is the minimum eccentricity.';
         
-        DIAMETER = 5;
+        DIAMETER = 6;
         DIAMETER_NAME = 'Diameter';
         DIAMETER_TXT = 'The diameter is the maximum eccentricity.'
         
-        BETWEENNESS = 6;
+        BETWEENNESS = 7;
         BETWEENNESS_NAME = 'Betweenness';
         BETWEENNESS_TXT = 'Node betweenness centrality of a node is the fraction of all shortest paths in the graph that contain a given node. Nodes with high values of betweenness centrality participate in a large number of shortest paths.';
         
-        CLOSENESS = 7;
+        CLOSENESS = 8;
         CLOSENESS_NAME = 'Closeness';
         CLOSENESS_TXT = 'The closeness centrality of a node is the inverse of the average shortest path length from the node to all other nodes in the graph.';
         
-        ERANGE = 8;
+        ERANGE = 9;
         ERANGE_NAME = 'ERange';
         ERANGE_TXT = 'Calculate the edges which significantly reduce the characteristic path length in the network';
         
-        FINDWALK = 9;
+        FINDWALK = 10;
         FINDWALK_NAME = 'Find Walk';
         FINDWALK_TXT = 'Walks are sequences of linked nodes, that may visit a single node more than once';
         
-        MODULARITY = 10;
+        MODULARITY = 11;
         MODULARITY_NAME = 'Modularity';
         MODULARITY_TXT = 'Calculate the edges which significantly reduce the characteristic path length in the network';
         
-        RICHCLUB = 11;
+        RICHCLUB = 12;
         RICHCLUB_NAME = 'Rich Club';
         RICHCLUB_TXT = 'Calculate the edges which significantly reduce the characteristic path length in the network';
         
@@ -50,6 +54,7 @@ classdef Project < handle
             Project.DEGREE_NAME ...
             Project.PATHLENGTH_NAME ...
             Project.CLUSTERCOEFFICIENT_NAME ...
+             Project.TAU_NAME ...
             Project.RADIUS_NAME ...
             Project.DIAMETER_NAME ...
             Project.BETWEENNESS_NAME ...
@@ -65,6 +70,7 @@ classdef Project < handle
             Project.DEGREE_TXT ...
             Project.PATHLENGTH_TXT ...
             Project.CLUSTERCOEFFICIENT_TXT ...
+            Project.TAU_TXT ...
             Project.RADIUS_TXT ...
             Project.DIAMETER_TXT ...
             Project.BETWEENNESS_TXT ...
@@ -87,6 +93,7 @@ classdef Project < handle
         AvgDegree
         AvgPathLength
         AvgClusterCoefficient
+        AvgTau
         AvgRadius
         AvgDiameter
         AvgCloseness
@@ -117,6 +124,7 @@ classdef Project < handle
             p.AvgDegree = mean([p.Files.MeanDegree]);
             p.AvgPathLength = mean([p.Files.MeanPathLength]);
             p.AvgClusterCoefficient = mean([p.Files.MeanClusterCoefficient]);
+            p.AvgTau = mean([p.Files.MeanTau]);
             p.AvgRadius = mean([p.Files.MeanRadius]);
             p.AvgDiameter = mean([p.Files.MeanDiameter]);
             p.AvgCloseness = mean([p.Files.MeanCloseness]);

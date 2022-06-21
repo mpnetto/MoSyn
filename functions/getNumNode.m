@@ -12,16 +12,19 @@ function numNodes = getNumNode(file)
     % Get head content
     head = fgets(fac);
     
-    % Set delimiter
-    delimiter = char(9);
+    pos = find(isletter(head), 1, 'last');
+
+    head = extractBefore(head,pos);
+    
+    % Estipula delimitador (Nesse caso o tab)
+    if any(head == 9)
+        delimiter = char(9);
+    elseif any(head == 32)
+        delimiter = char(32);
+    end
     
     % Pega a quantidade de Colunas
-    numNodes = numel(strfind(head,delimiter));
-
-    % Checa se o ultimo caracter é um delimitador
-    if head(end-1) ~= delimiter
-        numNodes = numNodes + 1;
-    end
+    numNodes = numel(strfind(head,delimiter)) + 1;
     
     %Close File
     fclose(fac);

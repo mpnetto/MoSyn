@@ -22,6 +22,9 @@ classdef GraphM < handle
     properties (GetAccess = public, SetAccess = protected)
         A % connection matrix
         P % coefficient p-values
+
+        time
+        nodesLocation
         
         %N = nodeNumber;
         N
@@ -96,10 +99,15 @@ classdef GraphM < handle
         
     end
     methods 
-        function g = GraphM(A)
+        function g = GraphM(A, nodeLocation, time)
             if nargin > 0
                 g.A = double(A);
                 g.N = length(g.A);
+            end
+
+            if nargin > 1
+                g.nodesLocation = nodeLocation;
+                g.time = time;
             end
             
         end
@@ -753,6 +761,34 @@ classdef GraphM < handle
             R = g.R;
             Nk = g.Nk;
             Ek = g.Ek;
+        end
+
+        function tau = calcTau(g)
+            
+            labels = g.nodesLocation.Properties.RowNames;
+            
+            G = digraph(g.A,labels);
+            e = splitvars(G.Edges);
+            
+            for z = 1:height(e)
+                row = e(z,:);
+                node1 = table2cell(row(:,1));
+                node2 = table2cell(row(:,2));
+                
+                coordNode1 = table2array(g.nodesLocation(node1,:));
+                coordNode2 = table2array(g.nodesLocation(node2,:));
+                
+                Distance(z,:) = norm(coordNode2 - coordNode1);
+            end
+
+            if (height(e)>0)
+                ti(1:height(e)) = g.time;
+                tau = [array2table(ti') e array2table(Distance)];
+                tau.Properties.VariableNames = {'time','Source','Target','Tau','Distance'};
+            else
+                tau=[];
+            end
+            
         end
     end
     

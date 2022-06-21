@@ -16,43 +16,48 @@ classdef TVG < handle
         CLUSTERCOEFFICIENT_NAME = 'Cluster Coefficient';
         CLUSTERCOEFFICIENT_TXT = 'The clustering coefficient of a graph is the average of the clustering coefficients of its nodes.';
         CLUSTERCOEFFICIENT_DEFAULT = 1;
+
+        TAU = 4;
+        TAU_NAME = 'Tau';
+        TAU_TXT = 'Temporary tau explanation';
+        TAU_DEFAULT = 0;
         
-        RADIUS = 4;
+        RADIUS = 5;
         RADIUS_NAME = 'Radius';
         RADIUS_TXT = 'The radius is the minimum eccentricity.';
         RADIUS_DEFAULT = 0;
         
-        DIAMETER = 5;
+        DIAMETER = 6;
         DIAMETER_NAME = 'Diameter';
         DIAMETER_TXT = 'The diameter is the maximum eccentricity.'
         DIAMETER_DEFAULT = 0;
         
-        BETWEENNESS = 6;
+        BETWEENNESS = 7;
         BETWEENNESS_NAME = 'Betweenness';
         BETWEENNESS_TXT = 'Node betweenness centrality of a node is the fraction of all shortest paths in the graph that contain a given node. Nodes with high values of betweenness centrality participate in a large number of shortest paths.';
         BETWEENNESS_DEFAULT = 0;
         
-        CLOSENESS = 7;
+        CLOSENESS = 8;
         CLOSENESS_NAME = 'Closeness';
         CLOSENESS_TXT = 'The closeness centrality of a node is the inverse of the average shortest path length from the node to all other nodes in the graph.';
         CLOSENESS_DEFAULT = 0;
         
-        ERANGE = 8;
+        ERANGE = 9;
         ERANGE_NAME = 'ERange';
         ERANGE_TXT = 'Calculate the edges which significantly reduce the characteristic path length in the network';
         ERANGE_DEFAULT = 0;
         
-        FINDWALK = 9;
+        FINDWALK = 10;
         FINDWALK_NAME = 'Find Walk';
         FINDWALK_TXT = 'Walks are sequences of linked nodes, that may visit a single node more than once';
         FINDWALK_DEFAULT = 0;
         
-        MODULARITY = 10;
+        MODULARITY = 11;
         MODULARITY_NAME = 'Modularity';
         MODULARITY_TXT = 'Calculate the edges which significantly reduce the characteristic path length in the network';
         MODULARITY_DEFAULT = 0;
         
-        RICHCLUB = 11;
+        RICHCLUB = 12;
         RICHCLUB_NAME = 'Rich Club';
         RICHCLUB_TXT = 'Calculate the edges which significantly reduce the characteristic path length in the network';
         RICHCLUB_DEFAULT = 0;
@@ -61,6 +66,7 @@ classdef TVG < handle
             TVG.DEGREE_NAME ...
             TVG.PATHLENGTH_NAME ...
             TVG.CLUSTERCOEFFICIENT_NAME ...
+            TVG.TAU_NAME ...
             TVG.RADIUS_NAME ...
             TVG.DIAMETER_NAME ...
             TVG.BETWEENNESS_NAME ...
@@ -76,6 +82,7 @@ classdef TVG < handle
             TVG.DEGREE_TXT ...
             TVG.PATHLENGTH_TXT ...
             TVG.CLUSTERCOEFFICIENT_TXT ...
+            TVG.TAU_NAME ...
             TVG.RADIUS_TXT ...
             TVG.DIAMETER_TXT ...
             TVG.BETWEENNESS_TXT ...
@@ -90,6 +97,7 @@ classdef TVG < handle
             TVG.DEGREE_DEFAULT ...
             TVG.PATHLENGTH_DEFAULT ...
             TVG.CLUSTERCOEFFICIENT_DEFAULT ...
+            TVG.TAU_DEFAULT ...
             TVG.RADIUS_DEFAULT ...
             TVG.DIAMETER_DEFAULT ...
             TVG.BETWEENNESS_DEFAULT ...
@@ -120,7 +128,6 @@ classdef TVG < handle
         TaoMin
         TaoMax
         Threshold
-        OutTvg
         TSCLimit
         
         Degree
@@ -128,7 +135,6 @@ classdef TVG < handle
         Hub
         Edges
         TSC
-        Tau
         MeanEdges   
         StdEdges
         CVEdges
@@ -156,6 +162,12 @@ classdef TVG < handle
         MeanClusterCoefficient
         StdClusterCoefficient
         CVClusterCoefficient
+
+        Tau
+        MeanTau
+        MeanFrameTau
+        StdTau
+        CVTau
         
         Radius
         MeanRadius
@@ -211,7 +223,7 @@ classdef TVG < handle
     methods
 
         % Get and save the TVG parameters
-        function t = TVG(File, Path, T, T_W,T_D_W, Labels, Indices, InitialTime, FinalTime, NumNodes, SlidWindow, TaoMin, TaoMax, Threshold,tscLim,OutTvg,Location)
+        function t = TVG(File, Path, T, T_W,T_D_W, Labels, Indices, InitialTime, FinalTime, NumNodes, SlidWindow, TaoMin, TaoMax, Threshold, tscLim, Location)
             if nargin > 0
                 t.TVGArray = T;
                 t.WeightedTVG = T_W;
@@ -228,7 +240,6 @@ classdef TVG < handle
                 t.TaoMax = TaoMax;
                 t.Threshold = Threshold;
                 t.NodesLabels = Labels;
-                t.OutTvg = OutTvg;
                 t.TSCLimit = tscLim;
                 t.NodesLocation = Location;
             end
@@ -240,24 +251,15 @@ classdef TVG < handle
             tvgArray = tvg.TVGArray;
             weightedTvg = tvg.WeightedTVG;
             orientedWeightedTVG = tvg.OrientedWeightedTVG;
-            outTVG = tvg.OutTvg;
             indices = tvg.Indices;
             locationNodes = readLocation(tvg);
             
             tau = cell2table(cell(0,5), 'VariableNames', {'time','Source','Target','Tau','Distance'});
          
-            parfor j=1:tvg.Length
+            for j=1:tvg.Length
                 
                 M = tvgArray(:,:,j);
 
-                if outTVG
-                    A = orientedWeightedTVG(:,:,j);
-                    t = tvg.TAUcalc(double(A), locationNodes, j);
-                    if(~isempty(t))
-                        tau = vertcat(tau, t);
-                    end
-                end
-                
                 g = GraphM(M);
                 
                 if find(strcmp(indices, tvg.DEGREE_NAME))
@@ -267,8 +269,16 @@ classdef TVG < handle
                 if find(strcmp(indices, tvg.CLUSTERCOEFFICIENT_NAME))
                     [Cluster(:,j)] = g.cluster();
                 end
+
                 if find(strcmp(indices, tvg.PATHLENGTH_NAME))
                     pathLength(:,j) = g.pathLength();
+                end
+
+                if find(strcmp(indices, tvg.TAU_NAME))
+                    a = orientedWeightedTVG(:,:,j);
+                    ag = GraphM(a, locationNodes, j);
+                 
+                    tau = vertcat(tau, ag.calcTau());
                 end
                 
                 if find(strcmp(indices, tvg.RADIUS_NAME))
@@ -338,6 +348,14 @@ classdef TVG < handle
                 tvg.MeanClusterCoefficient = mean(tvg.MeanFrameClusterCoefficient);
                 tvg.StdClusterCoefficient = std(tvg.MeanFrameClusterCoefficient);
                 tvg.CVClusterCoefficient = tvg.StdClusterCoefficient / tvg.MeanClusterCoefficient;
+            end
+
+             if find(strcmp(indices, tvg.TAU_NAME))
+                tvg.Tau = tau;
+%                 tvg.MeanFrameTau = mean(tau)';
+%                 tvg.MeanTau = mean(tvg.MeanFrameTau);
+%                 tvg.StdTau = std(tvg.MeanTau);
+%                 tvg.CVTau = tvg.StdTau / tvg.MeanTau;
             end
             
             if find(strcmp(indices, tvg.RADIUS_NAME))
@@ -424,9 +442,6 @@ classdef TVG < handle
             tvg.HubOut = sum(HubDeg_Out,2);
             tvg.HubsOut = tvg.HubOut./sum(tvg.HubOut,1);
 
-            tvg.Tau = tau;
-            
-
         end
         
         function write(tvg)
@@ -434,9 +449,9 @@ classdef TVG < handle
             length = tvg.Length - 1;
             indices = tvg.Indices;
             
-            DistHubs = horzcat(tvg.NodesLabels,num2cell(tvg.HubSim), num2cell(tvg.HubIn), num2cell(tvg.HubOut), num2cell(tvg.Hubs), num2cell(tvg.HubsIn), num2cell(tvg.HubsOut));  
-            TimeSerie=horzcat((0:1:length)',tvg.Edges',tvg.MeanFrameClusterCoefficient);
-            TimeStat=horzcat(tvg.MeanEdges,tvg.StdEdges,tvg.MeanClusterCoefficient,tvg.StdClusterCoefficient);
+            DistHubs = horzcat(tvg.NodesLabels, num2cell(tvg.HubSim), num2cell(tvg.HubIn), num2cell(tvg.HubOut), num2cell(tvg.Hubs), num2cell(tvg.HubsIn), num2cell(tvg.HubsOut));  
+            TimeSerie = horzcat((0:1:length)',tvg.Edges',tvg.MeanFrameClusterCoefficient);
+            TimeStat = horzcat(tvg.MeanEdges,tvg.StdEdges,tvg.MeanClusterCoefficient,tvg.StdClusterCoefficient);
 
             if find(strcmp(indices, tvg.DEGREE_NAME))
                 writeFile(horzcat((0:1:length)', tvg.MeanFrameDegree),{'Frame','MeanDegree'},[tvg.FilePath '\' tvg.Filename '_Degree'], '.txt');
@@ -471,13 +486,8 @@ classdef TVG < handle
                     '.txt');
             
             end
-            
-            
-            if(tvg.TSC>=0)
-                writeFile(tvg.TSC,{'TSC'},[tvg.FilePath '\' tvg.Filename '_TSC'], '.txt');
-            end
 
-            if tvg.OutTvg
+            if find(strcmp(indices, tvg.TAU_NAME))
                 Freq = histcounts(tvg.Tau.Tau, tvg.TaoMax - tvg.TaoMin+1)';
                 Freq(1) = Freq(1) / 2; % disregard double count in simetric edges
                 ctau=(tvg.TaoMin+1 : tvg.TaoMax+1)';
@@ -487,6 +497,11 @@ classdef TVG < handle
                 writetable(tvg.Tau, [tvg.FilePath '\' tvg.Filename '_TAU_' NameSync  '.txt'], 'Delimiter','\t');
             end
             
+            
+            if(tvg.TSC>=0)
+                writeFile(tvg.TSC,{'TSC'},[tvg.FilePath '\' tvg.Filename '_TSC'], '.txt');
+            end
+
              writeFile( ...
                 DistHubs, ...
                 {'Label', 'HubSim', 'HubIn', 'HubOut',	'Hubs',	'HubsIn', 'HubsOut'}, ...
@@ -521,6 +536,7 @@ classdef TVG < handle
             end
             
         end
+
     end
     
     methods (Static)
