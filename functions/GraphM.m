@@ -764,11 +764,6 @@ classdef GraphM < handle
         end
 
         function [tau, dist] = calcTau(g)
-            
-%             labels = g.nodesLocation.Properties.RowNames;
-            
-%             G = digraph(g.A,labels);
-%             e = splitvars(G.Edges);
 
             ex = [];
             for i = 1:size(g.A,2)
@@ -781,28 +776,7 @@ classdef GraphM < handle
                 end
             end
 
-
-%             for z = 1:height(e)
-%                 row = e(z,:);
-%                 node1 = table2cell(row(:,1));
-%                 node2 = table2cell(row(:,2));
-%                 
-%                 coordNode1 = table2array(g.nodesLocation(node1,:));
-%                 coordNode2 = table2array(g.nodesLocation(node2,:));
-%                 
-%                 Distance(z,:) = norm(coordNode2 - coordNode1);
-%             end
-% 
-%             if (height(e)>0)
-%                 ti(1:height(e)) = g.time;
-%                 tau = [array2table(ti') e array2table(Distance)];
-%                 tau.Properties.VariableNames = {'time','Source','Target','Tau','Distance'};
-%             else
-%                 tau=[];
-%             end
-
-
-            for z = 1:height(ex)
+            for z = 1:length(ex)
                 row = ex(z,:);
 
 
@@ -817,8 +791,7 @@ classdef GraphM < handle
 
             if (height(ex)>0)
                 ti(1:height(ex)) = g.time;
-                tau = [ti' ex ]; %Distance
-%                 tau.Properties.VariableNames = {'time','Source','Target','Tau','Distance'};
+                tau = [ti' ex ];
             else
                 dist=[];
                 tau=[];

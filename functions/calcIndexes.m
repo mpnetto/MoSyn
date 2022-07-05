@@ -46,9 +46,9 @@ function [project] = calcIndexes(path, files, nodeLocation, indexes, initialTime
 
             % Check if the extension is from an csv file or not. Get the raw
             % data and labels from the file
-            if (ext == ".csv")
+            if (lower(ext) == ".csv")
                 [data, labels] = readCsvFile(filename);
-            elseif(ext == ".asc")
+            elseif(lower(ext) == ".asc")
                  [data, labels] = readFile(filename);
             else
                return
@@ -61,7 +61,7 @@ function [project] = calcIndexes(path, files, nodeLocation, indexes, initialTime
             end
     
             % the real end time is the numberof rows in the data, minus the slide window, minus the max TAO, minus 1
-            realEndTime = size(data,1) - slidWindow - taoMax -1;
+            realEndTime = size(data,1) - slidWindow - taoMax - 1;
     
             % Check if the the real time was provided, and that the real time is
             % less than size of the file. If not, the end time will be 
@@ -72,7 +72,7 @@ function [project] = calcIndexes(path, files, nodeLocation, indexes, initialTime
                 msg=['Tamanho do arquivo menor do que o tempo final informado: Usando o tamanho como tempo final. Pressione OK para continuar. Arquivo:' filename];
                 uiwait(msgbox(msg, 'Warning','modal'));
             else
-                endTime = finalTime - initialTime;
+                endTime = finalTime;
             end
     
            
@@ -94,7 +94,7 @@ function [project] = calcIndexes(path, files, nodeLocation, indexes, initialTime
     
             % This method will transform the data into a motif matrix and calculate the TVG, the directed
             % TVG and the weighted directed TVG
-            [TVGArray, TVGArray_D, TVGWeig_Dir, kkMotif] = motif_sync_mex(data, 0, endTime-initialTime, numNodes, slidWindow, taoMin, taoMax, threshold);
+            [TVGArray, TVGArray_D, TVGWeig_Dir, ~] = motif_sync_mex(data, 0, endTime-initialTime, numNodes, slidWindow, taoMin, taoMax, threshold);
 
             if (sum(TVGArray, 3) == 0)
                 msgbox("Unable to sync data. Please try again with new parameters!")
@@ -116,6 +116,10 @@ function [project] = calcIndexes(path, files, nodeLocation, indexes, initialTime
             % After calculate the indexes theis method will write them into
             % files
             subjects(i).write();
+
+
+            % Clar the TVgs for memory performance
+            subjects(i).clearTVG();
                
         end
 
@@ -133,6 +137,7 @@ function [project] = calcIndexes(path, files, nodeLocation, indexes, initialTime
     end
 
     %Configure and save project
+
     project = Project(subjects, path, files, nodeLocation, indexes);
     project.runProject();
     project.write();

@@ -525,6 +525,11 @@ classdef TVG < handle
            
         end
 
+        function clearTVG(tvg)
+            tvg.WeightedTVG = [];
+            tvg.OrientedWeightedTVG = [];
+        end
+
     end
     
     methods (Static)
