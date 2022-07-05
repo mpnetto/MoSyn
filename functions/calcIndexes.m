@@ -130,6 +130,10 @@ function [project] = calcIndexes(path, files, nodeLocation, indexes, initialTime
         disp("Calculated time of subject " + name + " is: " + subjectTimeEnd + " seconds.");
 
         abort = multiWaitbar('Subjects', i/length(pFiles));
+
+        if abort
+            break
+        end
         
     end
 
