@@ -11,6 +11,8 @@ function [project] = calcIndexes(path, files, nodeLocation, indexes, initialTime
 
     project = -1;
 
+    multiWaitbar('Subjects',0, 'Color', 'g', 'CanCancel','on', 'CancelFcn', @(a,b) disp( ['Cancel ',a] ));
+
     % The number of subjects is the number of files provided
     numSubjects = length(files);
 
@@ -126,6 +128,8 @@ function [project] = calcIndexes(path, files, nodeLocation, indexes, initialTime
          % Finish timer and diplay calculate time of each subject
         subjectTimeEnd = toc(subjectTimeStart); 
         disp("Calculated time of subject " + name + " is: " + subjectTimeEnd + " seconds.");
+
+        abort = multiWaitbar('Subjects', i/length(pFiles));
         
     end
 
@@ -145,6 +149,8 @@ function [project] = calcIndexes(path, files, nodeLocation, indexes, initialTime
      % Finish timer and diplays Total calculation time
     totalTimeEnd = toc(totalTimeStart);
     disp("Total calculation time is: " + totalTimeEnd + " seconds.");
+
+    multiWaitbar('CloseAll');
    
 end
 
