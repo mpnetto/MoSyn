@@ -283,7 +283,7 @@ classdef GraphM < handle
             % See also Graph, pl.
             
             if isempty(g.clo)
-                [c,cin,cout] = g.pathLength();
+                [c,cin,cout] = g.pathLen gth();
                 g.clo = c.^-1;
                 g.cloin = cin.^-1;
                 g.cloout = cout.^-1;

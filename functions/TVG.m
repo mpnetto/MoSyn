@@ -257,7 +257,7 @@ classdef TVG < handle
             
             tau = [] ; % cell2table(cell(0,5), 'VariableNames', {'time','Source','Target','Tau','Distance'});
             tauDistance = [] ;
-            parfor j=1:tvg.Length
+            for j=1:tvg.Length
                 
                 M = tvgArray(:,:,j);
 
