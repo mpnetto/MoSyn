@@ -1,3 +1,7 @@
+layout: page
+title: "Mosyn"
+permalink: /index
+
 # Mosyn
 
 Mosyn is a framework for analyzing and visualizing dynamic networks. It provides various graph measures and tools to explore time-varying graphs.
