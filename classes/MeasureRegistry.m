@@ -105,34 +105,35 @@ classdef MeasureRegistry
         % @param graphType: The graph type to filter active measures by.
         % @return measuresArray: An array containing
          % active Measure objects that support the specified graph type.
-    function measuresArray = getActiveMeasures(obj, graphType)
-        measuresArray = Measure.empty();
-
-        measures = obj.measures.values;
-
-        for i = 1:length(measures)
-            measure = measures{i};
-
-            if (measure.active && ismember(graphType, measure.supportedGraphs))
-                measuresArray(end+1) = copy(measure);
+        function measuresArray = getActiveMeasures(obj, graphType)
+            measuresArray = Measure.empty();
+    
+            measures = obj.measures.values;
+    
+            for i = 1:length(measures)
+                measure = measures{i};
+    
+                if (measure.active && ismember(graphType, measure.supportedGraphs))
+                    measuresArray(end+1) = copy(measure);
+                end
             end
         end
-    end
 
-    % Get the names of all active measures.
-    %
-    % @return measureNames: A cell array containing the names of all active measures.
-    function measureNames = getMeasuresNames(obj)
-        measureNames = {obj.getActiveMeasures.name};
-    end
-
-    % Write the calculated data for all active measures.
-    function writeData(obj)
-        for j = 1:length(obj.getActiveMeasures)
-
-            measure = obj.getActiveMeasures{j};
-
-            measure.write()
+        % Get the names of all active measures.
+        %
+        % @return measureNames: A cell array containing the names of all active measures.
+        function measureNames = getMeasuresNames(obj)
+            measureNames = {obj.getActiveMeasures.name};
+        end
+    
+        % Write the calculated data for all active measures.
+        function writeData(obj)
+            for j = 1:length(obj.getActiveMeasures)
+    
+                measure = obj.getActiveMeasures{j};
+    
+                measure.write()
+            end
         end
     end
 end
