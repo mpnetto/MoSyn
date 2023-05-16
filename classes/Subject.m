@@ -27,12 +27,18 @@ classdef Subject < handle
 
             % Store the variable names from the import options as labels
             obj.Configuration.NodesLabels = opts.VariableNames;
+            
+            if verLessThan('matlab', '9.6')
+                data = readFile(obj.Configuration.Filename, obj.Configuration.Extension);
+            else
+                  % Read the matrix from the file using the import options
+                data = readmatrix(obj.Configuration.Filename, opts);
+             
+            end
 
-            % Read the matrix from the file using the import options
-            data = readmatrix(obj.Configuration.Filename, opts);
 
             % Remove the first column if 'Remove Time Column' is checked
-            if(obj.Configuration.RemoveTimeColumn)
+            if(obj.Configuration.RemoveTimeColumn == "on")
                 data(:,1) = [];
                 obj.Configuration.NodesLabels(1,:) = [];
             end
@@ -73,7 +79,7 @@ classdef Subject < handle
             initialTime = 0;
             realEndTime = obj.Configuration.RealEndTime;
             binaryTVG = motif_sync_mex(data, initialTime, realEndTime, obj.Configuration.NumberOfNodes, obj.Configuration.SlidWindow, obj.Configuration.TaoMin, obj.Configuration.TaoMax, obj.Configuration.Threshold);
-
+            
             obj.TVG = TVG(binaryTVG);
             obj.ASN = ASN(binaryTVG);
         end
