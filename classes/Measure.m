@@ -172,7 +172,7 @@ classdef (Abstract) Measure < handle & matlab.mixin.Copyable & matlab.mixin.Hete
 
             len = length(self.frameAverage)-1;
 
-            writeFile([(0:1:len)', self.frameAverage], {'Frame', self.name}, [path '\' name '_' self.name], '.txt')
+            writeFile([(0:1:len)', self.frameAverage], {'Frame', self.name},[path name '_' self.name], '.txt')
         end
     end
 end

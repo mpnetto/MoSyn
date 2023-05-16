@@ -48,7 +48,7 @@ classdef ASN < GraphFeatures
 
             table = [source', target', num2cell(weight), type];
 
-            writeFile(table, {'Source', 'Target', 'Weight', 'Type'}, [configuration.Path '\' configuration.Name '_ASN_G'], '.txt');
+            writeFile(table, {'Source', 'Target', 'Weight', 'Type'}, [configuration.Path configuration.Name '_ASN_G'], '.txt');
         end
 
         % Write ASN correlation to the output file.
@@ -66,7 +66,7 @@ classdef ASN < GraphFeatures
 
             table = [source', target', num2cell(weight), type];
 
-            writeFile(table, {'Source', 'Target', 'Weight', 'Type'}, [configuration.Path '\' configuration.Name '_ASN_T'], '.txt');
+            writeFile(table, {'Source', 'Target', 'Weight', 'Type'}, [configuration.Path configuration.Name '_ASN_T'], '.txt');
         end
     end
 end
