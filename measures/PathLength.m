@@ -1,14 +1,6 @@
-% PathLength class computes the average shortest path length obetween all 
+% PathLength class computes the average shortest path length between all 
 % pairs of nodes in a given adjacency matrix. This class inherits from the 
 % Measure class.
-%
-% The shortest path length is the minimum number of edges that must be 
-% traversed to get from one node to another in a graph.
-%
-% Usage:
-%   pl = PathLength();
-%   values = pl.calculate(adjMatrix);
-
 classdef PathLength < Measure
     properties
         name = 'PathLength';            % (string) Name of the measure
@@ -18,15 +10,35 @@ classdef PathLength < Measure
     end
 
     methods
-        
-         % Calculate the average shortest path length for the binary graph
-        % represented by the given adjacency matrix.
-        %
-        % @param adjMatrix: The adjacency matrix of the graph.
-        % @return value: A column vector containing the average shortest
-        %                path length for each node.
+        % calculateBinary method calculates the average shortest path length
+        % for a binary graph represented by an adjacency matrix.
         function value = calculateBinary(~, adjMatrix)
-          % Determine the number of nodes in the graph.
+            n = length(adjMatrix);
+            d = adjMatrix;
+            d(d == 0) = inf;
+            for k = 1:n
+                for i = 1:n
+                    for j = 1:n
+                        if d(i, j) > d(i, k) + d(k, j)
+                            d(i, j) = d(i, k) + d(k, j);
+                        end
+                    end
+                end
+            end
+            d(1:1+length(d):end) = 0;
+            value = sum(d, 2) ./ (n - 1);
+        end
+
+        % calculateWeighted method calculates the average shortest path length
+        % for a weighted graph represented by an adjacency matrix.
+        function value = calculateWeighted(~, adjMatrix)
+            value = calculatePathLength(adjMatrix);
+        end
+
+        % calculatePathLength method calculates the average shortest path length
+        % for a graph represented by an adjacency matrix.
+        function value = calculatePathLength(adjMatrix)
+            % Determine the number of nodes in the graph.
             n = length(adjMatrix);
 
             % Initialize the distance matrix with infinite values.
@@ -66,28 +78,6 @@ classdef PathLength < Measure
                 numPaths = length(nonzeros(d(i,:)~=Inf)); % Exclude infinite distances and diagonal
                 value(i) = totalPaths / numPaths;
             end
-        end
-
-        % Calculate the average shortest path length for the weighted graph
-        % represented by the given adjacency matrix.
-        %
-        % @param adjMatrix: The adjacency matrix of the graph.
-        % @return value: A column vector containing the average shortest
-        %                path length for each node.
-        function value = calculateWeighted(~, adjMatrix)
-            value = calculatePathLength(adjMatrix);
-        end
-
-        % Calculate the average shortest path length for the graph
-        % represented by the given adjacency matrix (common function for
-        % both binary and weighted graphs).
-        %
-        % @param adjMatrix: The adjacency matrix of the graph.
-        % @return value: A column vector containing the average shortest
-        %                path length for each node.
-        function value = calculatePathLength(adjMatrix)
-
-            
         end
     end
 end
